@@ -8,7 +8,7 @@
 
 using namespace std;
 
-#define INF numeric_limits<int>::max()
+#define INF numeric_limits<int>::max() / 3
 
 struct Calle {
     int v;
@@ -88,6 +88,9 @@ int main() {
             if (d < min) min = d;
         }
 
-        cout << min << endl;
+        if (min < INF)
+            cout << min << endl;
+        else
+            cout << -1 << endl;
     }
 }
