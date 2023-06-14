@@ -7,6 +7,8 @@
 
 using namespace std;
 
+// Implementación de maxflow de
+// https://cp-algorithms.com/graph/edmonds_karp.html
 int n;
 vector<vector<int>> capacity;
 vector<vector<int>> adj;
