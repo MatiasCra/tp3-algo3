@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -pthread -std=gnu++17 -ggdb3 -g")
 project(tp3_algo3)
 
 set(CMAKE_CXX_STANDARD 17)

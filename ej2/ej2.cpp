@@ -92,10 +92,9 @@ void leer_input() {
         --u;
         adj[v].emplace_back(u);
         adj[u].emplace_back(v);
-        if (preferencias[v] == PRIM and preferencias[u] == KRUSKAL) swap(v, u);
-        capacity[v][u] = 1;
 
-        if (preferencias[v] == preferencias[u]) capacity[u][v] = 1;
+        capacity[v][u] = 1;
+        capacity[u][v] = 1;
     }
 }
 

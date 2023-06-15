@@ -123,11 +123,17 @@ vector<int> dijkstra_denso(const vector<list<pair<int, int>>> &adj, int x) {
 
 vector<int> bellman_ford(const list<Calle> &edges, int x, int n) {
     vector<int> distancia(n, INF);
+    bool parar = false;
     distancia[x] = 0;
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; not parar and i < n; i++) {
+        parar = true;
         for (auto e : edges) {
             auto [a, b, w] = e;
-            distancia[b] = min(distancia[b], distancia[a] + w);
+            int dist = distancia[a] + w;
+            if (dist < distancia[b]) {
+                distancia[b] = dist;
+                parar = false;
+            }
         }
     }
 
