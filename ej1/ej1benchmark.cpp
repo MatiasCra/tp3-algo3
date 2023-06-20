@@ -119,15 +119,14 @@ vector<int> dijkstra_ralo(const vector<list<pair<int, int>>> &adj, int x) {
 }
 
 vector<int> dijkstra_denso(const vector<vector<int>> &adj, int x) {
-    /* Asumo que puedo visitar todos llendo desde x */
-
     int n = adj.size();
     vector<bool> procesados(n, false);
     vector<int> distancia(n, INF);
 
     for (size_t i = 0; i < adj.size(); ++i) {
-        if (adj[x][i] == INF) continue;
-        distancia[i] = adj[x][i];
+        if (adj[x][i] != INF) {
+            distancia[i] = adj[x][i];
+        }
     }
 
     distancia[x] = 0;
@@ -143,12 +142,15 @@ vector<int> dijkstra_denso(const vector<vector<int>> &adj, int x) {
             }
         }
 
+        if (min_vertice == -1) break;
+
         procesados[min_vertice] = true;
 
         for (size_t i = 0; i < adj.size(); ++i) {
-            if (adj[min_vertice][i] == INF) continue;
-            if (distancia[i] > distancia[min_vertice] + adj[min_vertice][i])
-                distancia[i] = distancia[min_vertice] + adj[min_vertice][i];
+            if (adj[min_vertice][i] != INF) {
+                if (distancia[i] > distancia[min_vertice] + adj[min_vertice][i])
+                    distancia[i] = distancia[min_vertice] + adj[min_vertice][i];
+            }
         }
     }
 

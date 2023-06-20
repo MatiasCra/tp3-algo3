@@ -23,10 +23,10 @@ for i, line in enumerate(lines):
             bel.append(float(line))
 
 
-plt.plot(densidades, ralo, label="Ralo")
-plt.plot(densidades, denso, label="Denso")
-plt.plot(densidades, fib, label="Fibonacci Heap")
-plt.plot(densidades, bel, label="Bellmand-Ford")
+plt.plot(densidades, ralo, label="Priority queue (O((m + n) logn))")
+plt.plot(densidades, denso, label="Sin heap (O(n^2))")
+plt.plot(densidades, fib, label="Fibonacci heap (O(n logn + m))")
+plt.plot(densidades, bel, label="Bellman-Ford (O(n * m))")
 plt.xlabel("Densidad")
 plt.ylabel("Tiempo (seg)")
 plt.title("Tiempo por densidad")

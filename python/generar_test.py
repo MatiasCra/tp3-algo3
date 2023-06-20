@@ -15,10 +15,13 @@ while (len(calles) + 1) / cantidad_posible < densidad:
     desde = np.random.randint(0, esquinas)
     hasta = np.random.randint(0, esquinas)
 
-    if (desde, hasta) in calles or (hasta, desde):
+    if (desde, hasta) in calles or (hasta, desde) in calles:
         continue
 
     calles[desde, hasta] = np.random.randint(1, 1000)
+
+import os
+os.system(f"notify-send {len(calles) / cantidad_posible}")
 
 print(1)
 print(esquinas, len(calles), 0, 1, esquinas)
