@@ -6,7 +6,7 @@ function promedio() {
     local t=$(./cmake-build-debug/ej1benchmark "$1" < "$2")
     prom=$(echo "$prom + $t" | bc)
   done
-  prom=$(echo "$prom * 0.1" | bc)
+  prom=$(echo "$prom * 0.$3" | bc)
   echo $prom
 }
 
