@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <chrono>
+#include <cstddef>
 #include <iostream>
 #include <limits>
 #include <list>
@@ -7,6 +8,8 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+
+#include "fibonacci.hpp"  // Implementación de https://github.com/robinmessage/fibonacci
 
 using namespace std;
 
@@ -33,6 +36,29 @@ void leer_input(vector<list<pair<int, int>>> &adj,
         cin >> desde >> hasta >> longitud;
         adj[desde - 1].push_back({hasta - 1, longitud});
         adj_inv[hasta - 1].push_back({desde - 1, longitud});
+    }
+
+    for (int i = 0; i < cantidad_propuestas; ++i) {
+        int v, u, longitud;
+        cin >> v >> u >> longitud;
+        propuestas.push_back({v - 1, u - 1, longitud});
+    }
+}
+
+void leer_input_matriz(vector<vector<int>> &adj, vector<vector<int>> &adj_inv,
+                       list<Calle> &propuestas, int &n, int &s, int &t) {
+    int cantidad_calles, cantidad_propuestas;
+    cin >> n >> cantidad_calles >> cantidad_propuestas >> s >> t;
+    --s;
+    --t;
+
+    adj = vector<vector<int>>(n, vector<int>(n, INF));
+    adj_inv = vector<vector<int>>(n, vector<int>(n, INF));
+    for (int i = 0; i < cantidad_calles; ++i) {
+        int desde, hasta, longitud;
+        cin >> desde >> hasta >> longitud;
+        adj[desde - 1][hasta - 1] = longitud;
+        adj_inv[hasta - 1][desde - 1] = longitud;
     }
 
     for (int i = 0; i < cantidad_propuestas; ++i) {
@@ -92,28 +118,60 @@ vector<int> dijkstra_ralo(const vector<list<pair<int, int>>> &adj, int x) {
     return distancia;
 }
 
-vector<int> dijkstra_denso(const vector<list<pair<int, int>>> &adj, int x) {
+vector<int> dijkstra_denso(const vector<vector<int>> &adj, int x) {
+    /* Asumo que puedo visitar todos llendo desde x */
+
     int n = adj.size();
     vector<bool> procesados(n, false);
     vector<int> distancia(n, INF);
 
-    vector<pair<int, int>> q;
-    q.reserve(n);
+    for (size_t i = 0; i < adj.size(); ++i) {
+        if (adj[x][i] == INF) continue;
+        distancia[i] = adj[x][i];
+    }
 
     distancia[x] = 0;
-    q.push_back({0, x});
-    while (!q.empty()) {
-        auto it = max_element(q.begin(), q.end());
-        int a = it->second;
-        q.erase(it);
+    procesados[x] = true;
 
+    for (int k = 1; k < n; ++k) {
+        int min_vertice = -1;
+        int min_distancia = INF;
+        for (size_t i = 0; i < distancia.size(); ++i) {
+            if (not procesados[i] and distancia[i] < min_distancia) {
+                min_distancia = distancia[i];
+                min_vertice = i;
+            }
+        }
+
+        procesados[min_vertice] = true;
+
+        for (size_t i = 0; i < adj.size(); ++i) {
+            if (adj[min_vertice][i] == INF) continue;
+            if (distancia[i] > distancia[min_vertice] + adj[min_vertice][i])
+                distancia[i] = distancia[min_vertice] + adj[min_vertice][i];
+        }
+    }
+
+    return distancia;
+}
+
+vector<int> dijkstra_fib(const vector<list<pair<int, int>>> &adj, int x) {
+    int n = adj.size();
+    vector<bool> procesados(n, false);
+    vector<int> distancia(n, INF);
+    FibonacciHeap<pair<int, int>> q;
+
+    distancia[x] = 0;
+    q.insert({0, x});
+    while (!q.isEmpty()) {
+        int a = q.removeMinimum().second;
         if (procesados[a]) continue;
         procesados[a] = true;
         for (auto u : adj[a]) {
             int b = u.first, w = u.second;
             if (distancia[a] + w < distancia[b]) {
                 distancia[b] = distancia[a] + w;
-                q.push_back({-distancia[b], b});
+                q.insert({distancia[b], b});
             }
         }
     }
@@ -127,8 +185,7 @@ vector<int> bellman_ford(const list<Calle> &edges, int x, int n) {
     distancia[x] = 0;
     for (int i = 0; not parar and i < n; i++) {
         parar = true;
-        for (auto e : edges) {
-            auto [a, b, w] = e;
+        for (auto [a, b, w] : edges) {
             int dist = distancia[a] + w;
             if (dist < distancia[b]) {
                 distancia[b] = dist;
@@ -140,7 +197,12 @@ vector<int> bellman_ford(const list<Calle> &edges, int x, int n) {
     return distancia;
 }
 
-enum Metodo { DIJKSTRA_RALO = 0, DIJKSTRA_DENSO = 1, BELLMAN_FORD = 2 };
+enum Metodo {
+    DIJKSTRA_RALO = 0,
+    DIJKSTRA_DENSO = 1,
+    DIJKSTRA_FIB = 2,
+    BELLMAN_FORD = 3
+};
 
 int main(int argc, char **argv) {
     if (argc < 2) return 1;
@@ -150,7 +212,7 @@ int main(int argc, char **argv) {
     using std::chrono::high_resolution_clock;
     using std::chrono::milliseconds;
 
-    int m = atoi(argv[1]);
+    Metodo m = (Metodo)atoi(argv[1]);
 
     int cant_tests;
     cin >> cant_tests;
@@ -161,36 +223,51 @@ int main(int argc, char **argv) {
         vector<int> distancias_t;
 
         if (m == DIJKSTRA_RALO) {
+            auto t1 = high_resolution_clock::now();
+
             vector<list<pair<int, int>>> adj;
             vector<list<pair<int, int>>> adj_inv;
             leer_input(adj, adj_inv, propuestas, n, s, t);
 
-            auto t1 = high_resolution_clock::now();
             distancias_s = dijkstra_ralo(adj, s);
             distancias_t = dijkstra_ralo(adj_inv, t);
             auto t2 = high_resolution_clock::now();
             duration<double, std::milli> ms_double = t2 - t1;
             double tiempo = ms_double.count() / 1000;
             cout << tiempo << endl;
-
         } else if (m == DIJKSTRA_DENSO) {
-            vector<list<pair<int, int>>> adj;
-            vector<list<pair<int, int>>> adj_inv;
-            leer_input(adj, adj_inv, propuestas, n, s, t);
-
             auto t1 = high_resolution_clock::now();
+
+            vector<vector<int>> adj;
+            vector<vector<int>> adj_inv;
+            leer_input_matriz(adj, adj_inv, propuestas, n, s, t);
+
             distancias_s = dijkstra_denso(adj, s);
             distancias_t = dijkstra_denso(adj_inv, t);
             auto t2 = high_resolution_clock::now();
             duration<double, std::milli> ms_double = t2 - t1;
             double tiempo = ms_double.count() / 1000;
             cout << tiempo << endl;
+        } else if (m == DIJKSTRA_FIB) {
+            auto t1 = high_resolution_clock::now();
+
+            vector<list<pair<int, int>>> adj;
+            vector<list<pair<int, int>>> adj_inv;
+            leer_input(adj, adj_inv, propuestas, n, s, t);
+
+            distancias_s = dijkstra_fib(adj, s);
+            distancias_t = dijkstra_fib(adj_inv, t);
+            auto t2 = high_resolution_clock::now();
+            duration<double, std::milli> ms_double = t2 - t1;
+            double tiempo = ms_double.count() / 1000;
+            cout << tiempo << endl;
         } else if (m == BELLMAN_FORD) {
+            auto t1 = high_resolution_clock::now();
+
             list<Calle> calles;
             list<Calle> calles_inv;
             leer_input_lista(calles, calles_inv, propuestas, n, s, t);
 
-            auto t1 = high_resolution_clock::now();
             distancias_s = bellman_ford(calles, s, n);
             distancias_t = bellman_ford(calles_inv, t, n);
             auto t2 = high_resolution_clock::now();
@@ -211,10 +288,10 @@ int main(int argc, char **argv) {
             if (d < min) min = d;
         }
 
-        if (min < INF)
-            cout << min << endl;
-        else
-            cout << -1 << endl;
+        // if (min < INF)
+        //     cout << min << endl;
+        // else
+        //     cout << -1 << endl;
     }
 
     return 0;
